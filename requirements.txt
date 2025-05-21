@@ -10,6 +10,7 @@ charset-normalizer==3.4.1
 constantly==23.10.4
 cryptography==44.0.2
 daphne==4.1.2
+dj-database-url==2.3.0
 Django==5.1.6
 django-cors-headers==4.7.0
 django-jazzmin==3.0.1
@@ -28,11 +29,13 @@ packaging==25.0
 pillow==11.1.0
 polib==1.2.0
 psycopg2==2.9.10
+psycopg2-binary==2.9.10
 pyasn1==0.6.1
 pyasn1_modules==0.4.1
 pycparser==2.22
 Pygments==2.19.1
 pyOpenSSL==25.0.0
+python-decouple==3.8
 python-http-client==3.3.7
 redis==5.2.1
 requests==2.32.3
