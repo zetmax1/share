@@ -6,7 +6,7 @@ __pycache__/
 # Virtual muhit papkasi
 venv/
 env/
-ENV/
+.env
 
 # Django maxfiy fayllar va sozlamalar
 *.sqlite3
