@@ -41,9 +41,7 @@ Thumbs.db
 .env
 *.env
 
-# Django static va media papkalari (agar serverda o‘zida saqlanadigan bo‘lsa)
-staticfiles/
-media/
+
 
 # Test natijalari va coverage
 .coverage
