@@ -1,0 +1,13 @@
+{% extends 'main.html' %}
+{% block content %}
+<div class="followers-container">
+    <h2 class="followers-title">Followers</h2>
+    <ul class="followers-list">
+        {% for follower in followers %}
+            <li class="follower-item">{{ follower.follower.name }} ({{ follower.follower.email }})</li>
+        {% empty %}
+            <li class="no-followers">No followers yet.</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}

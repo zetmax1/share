@@ -1,0 +1,51 @@
+{% extends 'main.html' %}
+{% block content %}
+<h2>Follow Requests</h2>
+
+{% if requests %}
+    <ul>
+        {% for request in requests %}
+            <li>
+                <strong>{{ request.sender.username }}</strong> sent you a follow request.
+
+                {% if request.accepted %}
+                    <span style="color: green;">Accepted</span>
+                {% else %}
+                    <a href="{% url 'accept_follow' request.id %}">Accept</a> |
+                    <a href="{% url 'decline_follow' request.id %}">Decline</a>
+                {% endif %}
+            </li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>No follow requests</p>
+{% endif %}
+
+<script>
+    document.querySelectorAll('.accept-follow').forEach(button => {
+        button.addEventListener('click', function() {
+            let requestId = this.getAttribute('data-id');
+            fetch(`/accept-follow/${requestId}/`, {method: 'POST', headers: {'X-CSRFToken': '{{ csrf_token }}'}})
+            .then(response => response.json())
+            .then(data => {
+                if (data.message) {
+                    this.parentElement.remove();
+                }
+            });
+        });
+    });
+
+    document.querySelectorAll('.reject-follow').forEach(button => {
+        button.addEventListener('click', function() {
+            let requestId = this.getAttribute('data-id');
+            fetch(`/reject-follow/${requestId}/`, {method: 'POST', headers: {'X-CSRFToken': '{{ csrf_token }}'}})
+            .then(response => response.json())
+            .then(data => {
+                if (data.message) {
+                    this.parentElement.remove();
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,39 @@
+{% load static %}
+{% load i18n %}
+<footer class="section__container footer__container">
+  <div class="footer__col">
+    <a href="{% url 'home' %}">
+      <div class="footer__logo"><img src="{% static 'images/favicon.ico' %}" alt="logo" />
+      </div>
+    </a>
+
+    <p>
+     {% trans 'Discover IT world with us' %}
+    </p>
+    <div class="footer__socials">
+      <a href="https://www.facebook.com/profile.php?id=100061061888257&locale=ru_RU"><i
+          class="fab fa-facebook-f"></i></a>
+      <a href="https://www.instagram.com/zokhidjon__001/"><i class="fab fa-instagram"></i></a>
+      <a href="https://x.com/_Zokhidjon_"><i class="fab fa-x-twitter"></i></a>
+      <a href="https://t.me/yuta_001"><i class="fab fa-telegram"></i></a>
+      <a href="https://www.pinterest.com/"><i class="fab fa-pinterest"></i></a>
+    </div>
+  </div>
+  <div class="footer__col">
+    <h4>{% trans 'Community' %}</h4>
+    <a href="#">{% trans 'Knowledge Hub' %}</a>
+    <a href="{% url 'collaboration' %}">{% trans 'Collaboration' %}</a>    
+  </div>
+  <div class="footer__col">
+    <h4>{% trans 'About Us' %}</h4>
+    <a href="{% url 'about' %}">{% trans 'Blogs' %}</a>
+    <a href="{% url 'security' %}">{% trans 'Security' %}</a>
+  </div>
+  <div class="footer__col">
+    <h4>{% trans 'Contact' %}</h4>
+    <a href="{% url 'contact' %}">{% trans 'Contact Us' %}</a>
+    <a href="{% url 'privacy' %}">{% trans 'Privacy Policy' %}</a>
+  </div>
+
+</footer>
+

@@ -1,0 +1,16 @@
+{% extends 'main.html' %}
+{% load static %}
+{% load i18n %}
+{% block content %}
+<div class="custom-contact-container">
+
+    <form class="custom-label" action="#" method="POST">
+        {% csrf_token %}
+        {{ form.as_p }}
+
+        <button type="submit" class="custom-button">{% trans 'SEND REQUEST' %}</button>
+    </form>
+
+</div>
+
+{% endblock %}

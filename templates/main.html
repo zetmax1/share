@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+{% load static %}
+{% load i18n %}
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+        integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="shortcut icon" href="{% static 'images/favicon.ico' %}" type="image/x-icon" />
+
+    <link rel="stylesheet" href="{% static 'styles/style.css' %}" />
+    <title>ShareWisdom - Discover the world!</title>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const languageSelect = document.getElementById('languageSelect');
+
+            languageSelect.addEventListener('change', function () {
+                const selectedValue = this.value;
+                if (selectedValue) {
+                    // Assuming you have set up language switching URLs like /en/, /ru/, etc.
+                    let list = window.location.pathname.split('/')
+
+                    window.location.pathname = `/${selectedValue}/${list.slice(2).join('/')}`
+                }
+            });
+        });
+    </script>
+</head>
+
+<body>
+    {% include 'navbar.html' %}
+ 
+
+    {% if messages %}
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            {% for message in messages %}
+                {% if 'private_error' in message.tags %}
+                    Swal.fire({
+                        icon: "error",
+                        title: "Oops...",
+                        text: "{{ message }}",
+                        didOpen: () => {
+                            document.body.style.overflow = "hidden";
+                        },
+                        willClose: () => {
+                            document.body.style.overflow = "";
+                        }
+                    });
+                {% elif 'contact_success' in message.tags %}
+                    Swal.fire({
+                        icon: "success",
+                        title: "Success!",
+                        text: "{{ message }}",
+                        timer: 3000,
+                        showConfirmButton: false
+                    });
+                {% elif 'contact_error' in message.tags %}
+                    Swal.fire({
+                        icon: "error",
+                        title: "Oops...",
+                        text: "{{ message }}",
+                    });
+                {% endif %}
+            {% endfor %}
+        });
+    </script>
+    <!-- <script>
+        {% for message in messages %}
+            {% if 'private_error' in message.tags %}
+                // Private room access error
+                Swal.fire({
+                    icon: "error",
+                    title: "Oops...",
+                    text: "{{ message }}",
+                    didOpen: () => {
+                        document.body.style.overflow = "hidden"; // Disable scrolling
+                    },
+                    willClose: () => {
+                        document.body.style.overflow = ""; // Re-enable scrolling
+                    }
+                });
+            {% elif 'contact_success' in message.tags %}
+                // Contact form success message
+                Swal.fire({
+                    icon: "success",
+                    title: "Success!",
+                    text: "{{ message }}",
+                    timer: 3000,
+                    showConfirmButton: false
+                });
+            {% elif 'contact_error' in message.tags %}
+                // Contact form error message
+                Swal.fire({
+                    icon: "error",
+                    title: "Oops...",
+                    text: "{{ message }}",
+                });
+            {% endif %}
+        {% endfor %}
+    </script> -->
+{% endif %}
+
+
+    {% block content %}
+
+    {% endblock %}
+
+    <!-- <script src="static/js/script.js"></script> -->
+    <script>
+
+        // Menu
+
+        const dropdownMenu = document.querySelector(".dropdown-menu");
+        const dropdownButton = document.querySelector(".dropdown-button");
+
+        if (dropdownButton) {
+            dropdownButton.addEventListener("click", () => {
+                dropdownMenu.classList.toggle("show");
+            });
+        }
+        
+        // Upload Image
+        const photoInput = document.querySelector("#avatar");
+        const photoPreview = document.querySelector("#preview-avatar");
+        if (photoInput)
+            photoInput.onchange = () => {
+                const [file] = photoInput.files;
+                if (file) {
+                    photoPreview.src = URL.createObjectURL(file);
+                }
+            };
+
+        // Scroll to Bottom
+        const conversationThread = document.querySelector(".room__box");
+        if (conversationThread) conversationThread.scrollTop = conversationThread.scrollHeight;
+
+    </script>
+</body>
+
+
+</html>

@@ -1,0 +1,45 @@
+{% extends 'main.html' %}
+{% load static %}
+{% block content %}
+<section id="collaboration-section">
+    <div class="collab-container">
+        <h2>Collaborate with Us</h2>
+        <p>Join our community and contribute your wisdom. You can submit articles, join discussions, or collaborate on
+            projects.</p>
+
+        <div class="collab-options">
+            <div class="collab-option">
+                <img src="contribute.png" alt="Contribute">
+                <h3>Write for Us</h3>
+                <p>Share your knowledge by submitting articles or blog posts. Help others learn from your experience.
+                </p>
+            </div>
+            <div class="collab-option">
+                <img src="discussion.png" alt="Discussion">
+                <h3>Join Discussions</h3>
+                <p>Engage in conversations with experts and like-minded individuals. Ask questions, share ideas, and
+                    grow together.</p>
+            </div>
+            <div class="collab-option">
+                <img src="mentorship.png" alt="Mentorship">
+                <h3>Become a Mentor</h3>
+                <p>Guide newcomers and help them navigate the IT world. Share your wisdom through one-on-one mentoring.
+                </p>
+            </div>
+            <div class="collab-option">
+                <img src="collab_project.png" alt="Projects">
+                <h3>Collaborate on Projects</h3>
+                <p>Work with others on exciting projects. Contribute your skills to meaningful initiatives.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+    document.querySelectorAll('.collab-option').forEach(item => {
+        item.addEventListener('click', () => {
+            alert('More collaboration features coming soon!');
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,115 @@
+{% extends 'main.html' %}
+{% load i18n %}
+{% block content %}
+{% load static %}
+<main class="profile-page layout layout--3">
+  <div class="container">
+    <!-- Topics Start -->
+    {% include 'base/topics_component.html' %}
+    <!-- Topics End -->
+
+    <!-- Room List Start -->
+    <div class="roomList">
+      <div class="profile">
+        <div class="profile__avatar">
+          <div class="avatar avatar--large active">
+            <img src="{{user.avatar.url}}" />
+          </div>
+        </div>
+        <div class="profile__info">
+          <h3>{{user.username}}</h3>
+          <p>@{{user.username}}</p>
+          {% if request.user == user %}
+          <a href="{% url 'update-user' %}" class="btn btn--main btn--pill">{% trans 'Edit Profile' %}</a>
+
+          <!-- send message -->
+
+          {% else %}
+          <a href="{% url 'chat'  username=user.username  %}" class="btn btn--main btn--pill">{% trans 'Send Message'
+            %}</a>
+
+          {% endif %}
+          {#<a href="{% url 'user-followers' user_id=user.id %}" class="btn btn--main btn--pill">{% trans
+            'Followers'%}</a>#}
+          {#<a href="{% url 'user-following' user_id=user.id %}" class="btn btn--main btn--pill">{% trans
+            'Following'%}</a>#}
+
+          <div>
+            <button class="btn btn-secondary" {% if is_private and not is_following and user !=request.user %} disabled
+              {% endif %} onclick="window.location.href='{% url 'user-followers' user.id %}'">
+              Followers ({{ followers_count }})
+            </button>
+
+
+            <button class="btn btn-secondary" {% if is_private and not is_following and user !=request.user %} disabled
+              {% endif %} onclick="window.location.href='{% url 'user-following' user.id %}'">
+              Following ({{ following_count }})
+            </button>
+          </div>
+        </div>
+        <div>
+
+          <div>
+            {% if request.user.is_authenticated and request.user != user %}
+            <form action="{% if is_following or is_requested %}
+              {% url 'unfollow-user' user_id=user.id %}
+              {% else %}
+              {% url 'follow-user' user_id=user.id %}
+              {% endif %}" method="post">
+              {% csrf_token %}
+              <button type="submit"
+                class="btn {% if is_following %}btn--secondary{% else %}btn--main{% endif %} btn--pill">
+                {% if is_following %}
+                Unfollow
+                {% elif is_requested %}
+                Cancel Request
+                {% elif user.auth_status == "private" %}
+                Send Request
+                {% else %}
+                Follow
+                {% endif %}
+              </button>
+            </form>
+
+            {% endif %}
+          </div>
+
+
+        </div>
+        {% if request.user.is_authenticated and request.user == user %}
+        <div class="notification-icon text-center">
+          <a href="{% url 'notifications' %}" class="text-decoration-none" onclick="openNotifications()">
+            <i class="fa fa-bell d-block" style="color: #007bff; font-size: 1.5rem;"></i>
+            <span style="color: #007bff; font-weight: 500;">Notifications</span>
+            <span id="profile-notification-count" style="color: #007bff;"></span>
+          </a>
+        </div>   
+  {% endif %}
+
+
+        <div class="profile__about" style="margin-top: 60px;">
+          <h3>{% trans 'About' %}</h3>
+          <p>
+            {{user.bio}}
+          </p>
+        </div>
+      </div>
+
+
+      {% include 'base/feed_component.html' %}
+
+
+    </div>
+    <!-- Room List End -->
+
+    <!-- Activities Start -->
+
+    {% include 'base/activity_components.html' %}
+
+    <!-- Activities End -->
+  </div>
+
+
+</main>
+
+{% endblock %}

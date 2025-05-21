@@ -1,0 +1,458 @@
+{% extends 'main.html' %}
+{% load i18n %}
+{% load static %}
+{% block content %}
+<style>
+    /* Modal styling */
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        justify-content: center;
+        align-items: center;
+    }
+    .modal-content {
+        background-color: #fff;
+        width: 90%;
+        max-width: 400px;
+        border-radius: 10px;
+        padding: 20px;
+        position: relative;
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #ddd;
+        padding-bottom: 10px;
+        margin-bottom: 10px;
+    }
+    .modal-title {
+        font-size: 18px;
+        font-weight: bold;
+    }
+    .close-btn {
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+    }
+    .follower-item, .following-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 0;
+        border-bottom: 1px solid #eee;
+    }
+    .action-btn {
+        padding: 5px 10px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        margin-left: 5px;
+    }
+    .remove-btn {
+        background-color: #ff4d4d;
+        color: white;
+    }
+    .request-btn {
+        background-color: #1e90ff;
+        color: white;
+    }
+    .follow-btn {
+        background-color: #1e90ff;
+        color: white;
+    }
+    /* Adjust button styles for consistency */
+    .btn-secondary {
+        background-color: #f0f0f0;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 5px;
+        cursor: pointer;
+        margin-right: 10px;
+    }
+    .btn-secondary:disabled {
+        background-color: #d0d0d0;
+        cursor: not-allowed;
+    }
+    /* Avatar styling */
+    .follower-avatar {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        margin-right: 10px;
+        vertical-align: middle;
+    }
+    .follower-info {
+        display: flex;
+        align-items: center;
+    }
+</style>
+
+<main class="profile-page layout layout--3">
+  <div class="container">
+    <!-- Topics Start -->
+    {% include 'base/topics_component.html' %}
+    <!-- Topics End -->
+
+    <!-- Room List Start -->
+    <div class="roomList">
+      <div class="profile">
+        <div class="profile__avatar">
+          <div class="avatar avatar--large active">
+            <img src="{{user.avatar.url}}" />
+          </div>
+        </div>
+        <div class="profile__info">
+          <h3>{{user.username}}</h3>
+          <p>@{{user.username}}</p>
+          {% if request.user == user %}
+          <a href="{% url 'update-user' %}" class="btn btn--main btn--pill">{% trans 'Edit Profile' %}</a>
+          {% else %}  
+          <a href="{% url 'chat' username=user.username %}" class="btn btn--main btn--pill">{% trans 'Send Message' %}</a>
+          {% endif %}
+
+          <div>
+            <button id="followersBtn" class="btn btn-secondary" 
+                {% if user.auth_status == "private" and not is_following and user != request.user %} disabled {% endif %}
+                onclick="showModal('followers')">
+                Followers (<span id="followersCount">{{ followers_count }}</span>)
+            </button>
+            <button id="followingBtn" class="btn btn-secondary" 
+                {% if user.auth_status == "private" and not is_following and user != request.user %} disabled {% endif %}
+                onclick="showModal('following')">
+                Following (<span id="followingCount">{{ following_count }}</span>)
+            </button>
+          </div>
+        </div>
+
+        <div>
+          {% if request.user.is_authenticated and request.user != user %}
+          <form action="{% if is_following or is_requested %}
+            {% url 'unfollow-user' user_id=user.id %}
+            {% else %}
+            {% url 'follow-user' user_id=user.id %}
+            {% endif %}" method="post">
+            {% csrf_token %}
+            <button type="submit"
+              class="btn {% if is_following %}btn--secondary{% else %}btn--main{% endif %} btn--pill">
+              {% if is_following %}
+              Unfollow
+              {% elif is_requested %}
+              Cancel Request
+              {% elif user.auth_status == "private" %}
+              Send Request
+              {% else %}
+              Follow
+              {% endif %}
+            </button>
+          </form>
+          {% endif %}
+        </div>
+
+        {% if request.user.is_authenticated and request.user == user %} 
+        <div class="notification-icon text-center">
+          <a href="{% url 'notifications' %}" class="text-decoration-none" onclick="openNotifications()">
+              <i class="fa fa-bell d-block" style="color: #007bff; font-size: 1.5rem;"></i>
+              <span style="color: #007bff; font-weight: 500;">Notifications</span>
+              <span id="profile-notification-count" style="color: #007bff;"></span>
+          </a>
+        </div>
+        {% endif %}
+
+        <div class="profile__about" style="margin-top: 60px;">
+          <h3>{% trans 'About' %}</h3>
+          <p>{{user.bio}}</p>
+        </div>
+      </div>
+
+      {% include 'base/feed_component.html' %}
+    </div>
+    <!-- Room List End -->
+
+    <!-- Activities Start -->
+    {% include 'base/activity_components.html' %}
+    <!-- Activities End -->
+  </div>
+
+  <!-- Debug Data -->
+  <div style="display: none;">
+    Followers: {{ followers }}
+    Following: {{ following }}
+  </div>
+
+  <!-- Modal for Followers/Following -->
+  <div id="followModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span id="modalTitle" class="modal-title"></span>
+        <button class="close-btn" onclick="closeModal()">×</button>
+      </div>
+      <div id="modalBody">
+        <!-- Followers List -->
+        <div id="followersList" style="display: none;">
+          {% for follower in followers %}
+            <div class="follower-item" data-user-id="{{ follower.follower.id }}">
+              <div class="follower-info">
+                <img src="{{ follower.follower.get_avatar_url }}" alt="{{ follower.follower.username }}'s avatar" class="follower-avatar" />
+                <a href="{% url 'user-profile' follower.follower.id %}">
+                    <span>{{ follower.follower.username }} ({{ follower.follower.email }})</span>
+                </a>
+              </div>
+              <div>
+                {% if request.user == user %}
+                  {% if not follower.is_mutual %}
+                    {% if follower.follower.auth_status == "private" %}
+                      <button class="action-btn request-btn" onclick="sendRequest('{{ follower.follower.id }}')">Send Request</button>
+                    {% else %}
+                      <button class="action-btn follow-btn" onclick="followUser('{{ follower.follower.id }}')">Follow</button>
+                    {% endif %}
+                  {% endif %}
+                  <button class="action-btn remove-btn" onclick="removeFollower('{{ follower.follower.id }}')">Remove</button>
+                {% endif %}
+              </div>
+            </div>
+          {% empty %}
+            <div class="no-followers">No followers yet.</div>
+          {% endfor %}
+        </div>
+        <!-- Following List -->
+        <div id="followingList" style="display: none;">
+          {% for following_user in following %}
+            <div class="following-item" data-user-id="{{ following_user.following.id }}">
+              <div class="follower-info">
+                <img src="{{ following_user.following.get_avatar_url }}" alt="{{ following_user.following.username }}'s avatar" class="follower-avatar" />
+                <a href="{% url 'user-profile' following_user.following.id %}">
+                    <span>{{ following_user.following.username }} ({{ following_user.following.email }})</span>
+                </a>
+              </div>
+              {% if request.user == user %}
+                <button class="action-btn remove-btn" onclick="removeFollowing('{{ following_user.following.id }}')">Remove</button>
+              {% endif %}
+            </div>
+          {% empty %}
+            <div class="no-following">Not following anyone yet.</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+    // Define base URLs for AJAX calls
+    const unfollowBaseUrl = "{% url 'unfollow-user' user_id=0 %}".replace('0', '');
+    const followBaseUrl = "{% url 'follow-user' user_id=0 %}".replace('0', '');
+
+    // Debug the URLs
+    console.log("Unfollow Base URL:", unfollowBaseUrl);
+    console.log("Follow Base URL:", followBaseUrl);
+
+    function showModal(type) {
+        const modal = document.getElementById('followModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const followersList = document.getElementById('followersList');
+        const followingList = document.getElementById('followingList');
+
+        if (type === 'followers') {
+            modalTitle.textContent = 'Followers';
+            followersList.style.display = 'block';
+            followingList.style.display = 'none';
+        } else if (type === 'following') {
+            modalTitle.textContent = 'Following';
+            followersList.style.display = 'none';
+            followingList.style.display = 'block';
+        }
+
+        modal.style.display = 'flex';
+    }
+
+    function closeModal() {
+        const modal = document.getElementById('followModal');
+        modal.style.display = 'none';
+    }
+
+    function removeFollower(followerId) {
+        console.log("Removing follower with ID:", followerId);
+        fetch(unfollowBaseUrl + followerId, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => {
+            console.log("Remove follower response status:", response.status);
+            if (!response.ok) {
+                throw new Error('Network response was not ok: ' + response.statusText);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log("Remove follower response data:", data);
+            if (data.success) {
+                // Remove the follower item from the DOM
+                const followerItem = document.querySelector(`.follower-item[data-user-id="${followerId}"]`);
+                if (followerItem) {
+                    followerItem.remove();
+                }
+                // Update the followers count
+                const followersCountSpan = document.getElementById('followersCount');
+                let count = parseInt(followersCountSpan.textContent);
+                if (count > 0) {
+                    followersCountSpan.textContent = count - 1;
+                }
+                // If no followers left, show "No followers yet"
+                if (!document.querySelector('.follower-item')) {
+                    document.getElementById('followersList').innerHTML = '<div class="no-followers">No followers yet.</div>';
+                }
+            } else {
+                alert('Failed to remove follower: ' + (data.error || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Error removing follower:', error);
+            alert('Error removing follower: ' + error.message);
+        });
+    }
+
+    function removeFollowing(followingId) {
+        console.log("Removing following with ID:", followingId);
+        fetch(unfollowBaseUrl + followingId, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => {
+            console.log("Remove following response status:", response.status);
+            if (!response.ok) {
+                throw new Error('Network response was not ok: ' + response.statusText);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log("Remove following response data:", data);
+            if (data.success) {
+                // Remove the following item from the DOM
+                const followingItem = document.querySelector(`.following-item[data-user-id="${followingId}"]`);
+                if (followingItem) {
+                    followingItem.remove();
+                }
+                // Update the following count
+                const followingCountSpan = document.getElementById('followingCount');
+                let count = parseInt(followingCountSpan.textContent);
+                if (count > 0) {
+                    followingCountSpan.textContent = count - 1;
+                }
+                // If no following left, show "Not following anyone yet"
+                if (!document.querySelector('.following-item')) {
+                    document.getElementById('followingList').innerHTML = '<div class="no-following">Not following anyone yet.</div>';
+                }
+            } else {
+                alert('Failed to remove following: ' + (data.error || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Error removing following:', error);
+            alert('Error removing following: ' + error.message);
+        });
+    }
+
+    function sendRequest(userId) {
+        console.log("Sending follow request to user ID:", userId);
+        fetch(followBaseUrl + userId, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => {
+            console.log("Send request response status:", response.status);
+            if (!response.ok) {
+                throw new Error('Network response was not ok: ' + response.statusText);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log("Send request response data:", data);
+            if (data.success) {
+                // Update the follower item to remove the "Send Request" button
+                const followerItem = document.querySelector(`.follower-item[data-user-id="${userId}"]`);
+                if (followerItem) {
+                    const requestBtn = followerItem.querySelector('.request-btn');
+                    if (requestBtn) {
+                        requestBtn.remove();
+                    }
+                }
+            } else {
+                alert('Failed to send request: ' + (data.error || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Error sending request:', error);
+            alert('Error sending request: ' + error.message);
+        });
+    }
+
+    function followUser(userId) {
+        console.log("Following user with ID:", userId);
+        fetch(followBaseUrl + userId, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => {
+            console.log("Follow user response status:", response.status);
+            if (!response.ok) {
+                throw new Error('Network response was not ok: ' + response.statusText);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log("Follow user response data:", data);
+            if (data.success) {
+                // Update the follower item to remove the "Follow" button and mark as mutual
+                const followerItem = document.querySelector(`.follower-item[data-user-id="${userId}"]`);
+                if (followerItem) {
+                    const followBtn = followerItem.querySelector('.follow-btn');
+                    if (followBtn) {
+                        followBtn.remove();
+                    }
+                }
+                // Update the following count
+                const followingCountSpan = document.getElementById('followingCount');
+                let count = parseInt(followingCountSpan.textContent);
+                followingCountSpan.textContent = count + 1;
+            } else {
+                alert('Failed to follow user: ' + (data.error || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Error following user:', error);
+            alert('Error following user: ' + error.message);
+        });
+    }
+
+    window.onclick = function(event) {
+        const modal = document.getElementById('followModal');
+        if (event.target === modal) {
+            closeModal();
+        }
+    };
+</script>
+
+{% endblock %}

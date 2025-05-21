@@ -1,0 +1,69 @@
+{% extends 'main.html' %}
+{% load i18n %}
+{% block content %}
+<div style="width: 100%; height: 100vh;">
+<main class="update-account layout">
+  <div class="container">
+    <div class="layout__box">
+      <div class="layout__boxHeader">
+        <div class="layout__boxTitle">
+          <a href="{% url 'home' %}">
+            <svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+              <title>arrow-left</title>
+              <path
+                d="M13.723 2.286l-13.723 13.714 13.719 13.714 1.616-1.611-10.96-10.96h27.625v-2.286h-27.625l10.965-10.965-1.616-1.607z">
+              </path>
+            </svg>
+          </a>
+          <h3>{% trans 'Create/Update Study Room' %}</h3>
+        </div>
+      </div>
+      <div class="layout__body">
+        <form class="form" action="" method="POST" enctype="multipart/form-data">
+          {% csrf_token %}
+
+
+          <div class="form__group">
+            <label for="room_topic">{% trans 'Enter a Topic name' %}</label>
+            <input required type="text" value="{{room.topic.name}}" name="topic" list="topic-list">
+            <datalist id="topic-list">
+              <select id="room_topic">
+                {% for topic in topics %}
+                <option value="{{topic.name}}">{{topic.name}}</option>
+                {% endfor %}
+              </select>
+            </datalist>
+          </div>
+
+          <div class="form__group">
+            <label for="room_name">{% trans 'Room name' %}</label>
+            {{form.name}}
+            <span style="color: red;">{{form.errors.name}}</span>
+          </div>
+
+          <div class="form__group">
+            <label for="room_name">{% trans 'Room description' %}</label>
+            {{form.description}}
+            <span style="color: red;">{{form.errors.description}}</span>
+          </div>
+
+          <div class="form__group">
+            <label for="id_media">{% trans 'Room Media (optional)' %}</label>
+            {{ form.media }}
+            <span style="color: red;">{{form.errors.media}}</span>
+            <!-- <input type="file"> -->
+          </div>
+
+          <div class="form__action">
+            
+            <a class="btn btn--dark" href="/">{% trans 'Cancel' %}</a>
+            <button class="btn btn--main" type="submit">{% trans 'Submit' %}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  </div>
+</main>
+</div>
+{% endblock %}

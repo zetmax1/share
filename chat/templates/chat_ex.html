@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chatting with {{ username }}</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" />
+</head>
+
+<body style="height: 100vh; display: flex; flex-direction: column">
+  <style>
+    .profile-icon {
+      color: #12151a;
+    }
+
+    .chat-container {
+      flex: 1;
+    }
+
+    #chatbox {
+      background-color: #f8f9fa;
+      overflow-y: auto;
+      height: calc(100vh - 180px);
+      padding: 10px;
+    }
+
+    .chat-message {
+      border-radius: 8px;
+      padding: 10px;
+      display: flex;
+      align-items: center;
+      width: fit-content;
+      max-width: 80%; /* Prevent message from being too wide */
+      margin-bottom: 10px;
+      clear: both;
+      position: relative;
+    }
+
+    .chat-message.sender {
+      background-color: #ffffff;
+      color: #435f7a;
+      margin-left: auto;
+      text-align: right;
+    }
+
+    .chat-message.receiver {
+      background-color: #435f7a;
+      color: white;
+      margin-right: auto;
+      text-align: left;
+    }
+
+    .chat-message .message-content {
+      flex-grow: 1;
+      word-break: break-word; /* Ensure long words wrap */
+    }
+
+    .chat-message .actions {
+      margin-left: 10px;
+      cursor: pointer;
+    }
+
+    .chat-message .dropdown-menu {
+      position: absolute;
+      z-index: 1000;
+      min-width: 120px;
+      padding: 5px 0;
+      background-color: #fff;
+      border: 1px solid #e9ecef;
+      border-radius: 4px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      top: 100%; /* Position below the 3-dot icon */
+    }
+
+    .chat-message.sender .dropdown-menu {
+      right: 0; /* Align to the right for sender */
+    }
+
+    .chat-message.receiver .dropdown-menu {
+      left: 0; /* Align to the left for receiver */
+    }
+
+    .chat-message .dropdown-item {
+      padding: 5px 10px;
+      font-size: 14px;
+      color: #435f7a;
+    }
+
+    .chat-message .dropdown-item:hover {
+      background-color: #f8f9fa;
+    }
+
+    .chat-message .dropdown-item.delete {
+      color: #dc3545;
+    }
+
+    .chat-message .previous-content {
+      font-size: 12px;
+      color: #888;
+      display: block;
+    }
+
+    .chat-input {
+      background-color: white;
+    }
+
+    .chat-input button {
+      border-top-left-radius: 0;
+      border-bottom-left-radius: 0;
+      background: #435f7a;
+      color: white;
+      border: none;
+    }
+
+    .chat-input button:hover {
+      background: #2c3e50;
+    }
+
+    .sidebar {
+      background-color: #2c3e50;
+      overflow-y: auto;
+    }
+
+    .sidebar a {
+      background: #2c3e50;
+      color: white;
+    }
+
+    .sidebar i {
+      color: white;
+    }
+
+    .chats .list-group-item {
+      border: none;
+      border-bottom: 1px solid #e9ecef;
+      padding: 25px 25px 15px 30px;
+      font-size: 18px;
+    }
+
+    .chats .list-group-item:hover {
+      background-color: #435f7a;
+      color: white;
+    }
+
+    .chats .list-group-item {
+      border-bottom: 1px solid #435f7a;
+      width: 100%; /* Fix width to prevent overflow */
+    }
+
+    .active {
+      background-color: #435f7a !important;
+      color: white;
+    }
+
+    .logout {
+      display: block;
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      padding: 10px;
+      background-color: #2c3e50;
+    }
+
+    .recording {
+      background-color: #dc3545 !important;
+    }
+  </style>
+  <div class="container-fluid h-100">
+    <div class="row h-100">
+      <!-- User List Sidebar (4 Columns) -->
+      <div class="col-3 sidebar p-3 chats">
+        <h5 class="mb-3 text-white">Chats</h5>
+        <div class="contacts">
+          {% for item in user_last_messages %}
+          <a href="{% url 'chat' item.user.username %}"
+            class="list-group-item list-group-item-action {% if item.user.username == username %} active {% endif %}"
+            data-id="{{ username }}">
+            <div class="d-flex align-items-center">
+              <img src="{{ item.user.avatar.url|default:'/static/default-avatar.png' }}" alt="{{ item.user.username }}'s Profile Image"
+                class="profile-icon rounded-circle mr-3" style="width: 1.8rem; height: 1.8rem; object-fit: cover" />
+              <div class="w-100">
+                <div class="d-flex justify-content-between">
+                  <strong class="text-truncate">{{ item.user.username }}</strong>
+                  {% if item.last_message %}
+                  {% load tz %}
+                  {% timezone "Asia/Tashkent" %}
+                  <small class="text-nowrap timestamp">
+                    {{ item.last_message.timestamp|localtime|date:"H:i" }}
+                  </small>
+                  {% endtimezone %}
+                  {% else %}
+                  <small class="text-nowrap timestamp"></small>
+                  {% endif %}
+                </div>
+                <div>
+                  {% if item.last_message %}
+                  <small class="d-block text-truncate last-msg" style="max-width: 90%" id="last-message">
+                    {% if item.last_message.sender == request.user %} You: {% endif %}
+                    {{ item.last_message.content|truncatewords:5 }}
+                  </small>
+                  {% else %}
+                  <small class="d-block text-truncate last-msg" style="max-width: 90%" id="last-message">No messages yet</small>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </a>
+          {% endfor %}
+        </div>
+        <div class="logout">
+          <h5 class="text-white">
+            <i class="fas fa-user"></i>
+            {{ request.user.username }}
+          </h5>
+        </div>
+      </div>
+
+      <!-- Chat Area (8 Columns) -->
+      <div class="col-9 d-flex flex-column chat" data-id="{{ username }}">
+        <div class="d-flex align-items-center p-1">
+          <a href="{% url 'user-profile' selected_user.id %}"><img src="{{ selected_user.avatar.url|default:'/static/default-avatar.png' }}" style="border-radius: 50%; height: 45px; width: 50px" /> </a>
+          <h3 class="display-5 mb-0" style="padding-left: 10px; color: black;"><a href="{% url 'user-profile' selected_user.id %}">{{ username }}</a></h3>
+          <form method="GET" action="" class="p-3 ml-auto">
+            <div class="form-group mb-0">
+              <input type="text" name="search" id="searchInput" class="form-control" placeholder="Search messages..."
+                value="{{ search_query }}" />
+            </div>
+          </form>
+        </div>
+        <div id="chatbox" class="chatbox flex-fill p-3">
+          {% if chats %}
+          {% for message in chats %}
+          {% if not message.is_deleted %}
+          <div class="chat-message {% if message.sender == request.user %} sender {% else %} receiver {% endif %}"
+            id="message-{{ message.id }}"
+            data-reply-to-content="{% if message.reply_to %}{{ message.reply_to.content|escapejs }}{% endif %}"
+            data-previous-content="{% if message.previous_content %}{{ message.previous_content|escapejs }}{% endif %}">
+            <div class="message-content">
+              {% if message.content %}
+              <span>{{ message.content }}</span>
+              {% elif message.image %}
+              <img src="{{ message.image.url }}" style="max-width: 200px;" />
+              {% elif message.video %}
+              <video controls style="max-width: 200px;"><source src="{{ message.video.url }}"></video>
+              {% elif message.voice %}
+              <audio controls><source src="{{ message.voice.url }}"></audio>
+              {% elif message.file %}
+              <a href="{{ message.file.url }}" target="_blank">{{ message.file.name }}</a>
+              {% endif %}
+              {% if message.edited %}
+              <small>(edited)</small>
+              {% endif %}
+              {% if message.reply_to %}
+              <small>(reply to "{{ message.reply_to.content|truncatewords:3 }}")</small>
+              {% endif %}
+            </div>
+            <div class="actions">
+              <i class="fas fa-ellipsis-v" onclick="toggleDropdown('{{ message.id }}')"></i>
+              <div class="dropdown-menu" id="dropdown-{{ message.id }}" style="display: none;">
+                {% if message.sender == request.user %}
+                <div class="dropdown-item" onclick="editMessage('{{ message.id }}')">Edit</div>
+                <div class="dropdown-item delete" onclick="deleteMessage('{{ message.id }}')">Delete</div>
+                {% endif %}
+                <div class="dropdown-item" onclick="replyToMessage('{{ message.id }}')">Reply</div>
+                <div class="dropdown-item" onclick="copyMessage('{{ message.content|escapejs }}')">Copy</div>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+          {% endfor %}
+          {% else %}
+          <p class="no-messages">No Messages.</p>
+          {% endif %}
+        </div>
+        <div class="chat-input p-3">
+          <div class="input-group">
+            <div class="input-group-prepend">
+              <label class="btn btn-outline-secondary" style="cursor: pointer;">
+                <i class="fas fa-paperclip"></i>
+                <input type="file" id="mediaInput" style="display: none;" accept="image/*,video/*,audio/*,.*" multiple>
+              </label>
+              <button id="voiceButton" class="btn btn-outline-secondary" type="button">
+                <i class="fas fa-microphone"></i>
+              </button>
+            </div>
+            <input type="text" id="my_input" class="form-control" placeholder="Type a message..." required />
+            <div class="input-group-append">
+              <button id="submit_button" class="btn btn-primary" type="button">Send</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {{ username|json_script:"room_slug" }}
+
+  <script>
+    const chatbox = document.querySelector("#chatbox");
+    function scrollToBottom() {
+      chatbox.scrollTop = chatbox.scrollHeight;
+    }
+    scrollToBottom();
+
+    const roomName = JSON.parse(document.getElementById("room_slug").textContent);
+    const wsProtocol = window.location.protocol === "https:" ? "wss://" : "ws://";
+    const wsHost = window.location.host || "localhost:8000";
+    const chatSocket = new WebSocket(`${wsProtocol}${wsHost}/ws/chat/${roomName}/`);
+
+    chatSocket.onopen = function (e) {
+      console.log("WebSocket connected successfully");
+    };
+    chatSocket.onerror = function (e) {
+      console.error("WebSocket error:", e);
+    };
+    chatSocket.onclose = function (e) {
+      console.log("WebSocket closed:", e);
+    };
+
+    window.onbeforeunload = function() {
+      chatSocket.close();
+    };
+
+    document.querySelector("#my_input").focus();
+    document.querySelector("#my_input").onkeyup = function (e) {
+      if (e.keyCode === 13) {
+        e.preventDefault();
+        document.querySelector("#submit_button").click();
+      }
+    };
+
+    document.querySelector("#submit_button").onclick = function (e) {
+      const messageInput = document.querySelector("#my_input").value;
+      if (!messageInput) {
+        alert("Please enter a message!");
+        return;
+      }
+      console.log("Sending message:", messageInput);
+      chatSocket.send(JSON.stringify({
+        action: "send",
+        message: messageInput
+      }));
+      document.querySelector("#my_input").value = "";
+    };
+
+    document.querySelector("#mediaInput").addEventListener("change", function (e) {
+      const files = e.target.files;
+      if (files.length > 0) {
+        for (let file of files) {
+          const formData = new FormData();
+          formData.append("file", file);
+          formData.append("action", "media");
+          formData.append("type", file.type.startsWith("image/") ? "image" :
+                                 file.type.startsWith("video/") ? "video" :
+                                 file.type.startsWith("audio/") ? "voice" : "file");
+
+          fetch("/upload-media/", {
+            method: "POST",
+            body: formData,
+            headers: { "X-CSRFToken": getCookie("csrftoken") }
+          })
+          .then(response => {
+            if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+            return response.json();
+          })
+          .then(data => {
+            console.log("File uploaded:", data);
+            chatSocket.send(JSON.stringify({
+              action: "media",
+              type: data.type,
+              url: data.url,
+              filename: file.name
+            }));
+          })
+          .catch(error => {
+            console.error("Error uploading file:", error);
+            alert("Failed to upload file.");
+          });
+        }
+      }
+    });
+
+    function getCookie(name) {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== "") {
+        const cookies = document.cookie.split(";");
+        for (let i = 0; i < cookies.length; i++) {
+          const cookie = cookies[i].trim();
+          if (cookie.substring(0, name.length + 1) === (name + "=")) {
+            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            break;
+          }
+        }
+      }
+      return cookieValue;
+    }
+
+    let mediaRecorder;
+    let audioChunks = [];
+    document.querySelector("#voiceButton").addEventListener("click", async function () {
+      if (!mediaRecorder || mediaRecorder.state === "inactive") {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          mediaRecorder = new MediaRecorder(stream);
+          mediaRecorder.start();
+          this.innerHTML = '<i class="fas fa-stop"></i>';
+          this.classList.add("recording");
+
+          mediaRecorder.ondataavailable = (event) => audioChunks.push(event.data);
+          mediaRecorder.onstop = () => {
+            this.classList.remove("recording");
+            const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
+            audioChunks = [];
+
+            const formData = new FormData();
+            formData.append("file", audioBlob, "voice-message.webm");
+            formData.append("action", "media");
+            formData.append("type", "voice");
+
+            fetch("/upload-media/", {
+              method: "POST",
+              body: formData,
+              headers: { "X-CSRFToken": getCookie("csrftoken") }
+            })
+            .then(response => {
+              if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+              return response.json();
+            })
+            .then(data => {
+              chatSocket.send(JSON.stringify({
+                action: "media",
+                type: "voice",
+                url: data.url,
+                filename: "voice-message.webm"
+              }));
+            })
+            .catch(error => {
+              console.error("Error uploading voice:", error);
+              alert("Failed to upload voice message.");
+            });
+          };
+        } catch (err) {
+          console.error("Microphone access error:", err);
+          alert("Please allow microphone access.");
+        }
+      } else {
+        mediaRecorder.stop();
+        this.innerHTML = '<i class="fas fa-microphone"></i>';
+      }
+    });
+
+    chatSocket.onmessage = function (e) {
+      const data = JSON.parse(e.data);
+      console.log("Received WebSocket message:", data);
+
+      if (data.action === "send" || data.action === "reply") {
+        const div = document.createElement("div");
+        div.id = `message-${data.message_id}`;
+        div.className = `chat-message ${data.sender === "{{ request.user.username }}" ? "sender" : "receiver"}`;
+        div.innerHTML = `
+          <div class="message-content">
+            <span>${data.message}</span>
+            ${data.reply_to ? `<small>(reply to "${data.reply_to_content || ""}")</small>` : ""}
+          </div>
+          <div class="actions">
+            <i class="fas fa-ellipsis-v" onclick="toggleDropdown('${data.message_id}')"></i>
+            <div class="dropdown-menu" id="dropdown-${data.message_id}" style="display: none;">
+              ${data.sender === "{{ request.user.username }}" ? `
+                <div class="dropdown-item" onclick="editMessage('${data.message_id}')">Edit</div>
+                <div class="dropdown-item delete" onclick="deleteMessage('${data.message_id}')">Delete</div>
+              ` : ""}
+              <div class="dropdown-item" onclick="replyToMessage('${data.message_id}')">Reply</div>
+              <div class="dropdown-item" onclick="copyMessage('${data.message}')">Copy</div>
+            </div>
+          </div>
+        `;
+        chatbox.appendChild(div);
+        scrollToBottom();
+        updateSidebar(data);
+      } else if (data.action === "edit") {
+        const messageDiv = document.getElementById(`message-${data.message_id}`);
+        if (messageDiv) {
+          messageDiv.querySelector(".message-content").innerHTML = `
+            <span>${data.message}</span>
+            <small>(edited)</small>
+            ${data.reply_to ? `<small>(reply to "${data.reply_to_content || ""}")</small>` : ""}
+          `;
+          scrollToBottom();
+        }
+      } else if (data.action === "delete") {
+        const messageDiv = document.getElementById(`message-${data.message_id}`);
+        if (messageDiv && data.is_deleted) {
+          messageDiv.remove();
+          if (!chatbox.querySelector(".chat-message")) {
+            chatbox.innerHTML = '<p class="no-messages">No Messages.</p>';
+          }
+        }
+      } else if (data.action === "media") {
+        const div = document.createElement("div");
+        div.id = `message-${data.message_id}`;
+        div.className = `chat-message ${data.sender === "{{ request.user.username }}" ? "sender" : "receiver"}`;
+        let mediaContent = "";
+        if (data.type === "image") mediaContent = `<img src="${data.url}" style="max-width: 200px;" />`;
+        else if (data.type === "video") mediaContent = `<video controls style="max-width: 200px;"><source src="${data.url}"></video>`;
+        else if (data.type === "voice") mediaContent = `<audio controls><source src="${data.url}"></audio>`;
+        else if (data.type === "file") mediaContent = `<a href="${data.url}" target="_blank">${data.filename}</a>`;
+        div.innerHTML = `
+          <div class="message-content">${mediaContent}</div>
+          <div class="actions">
+            <i class="fas fa-ellipsis-v" onclick="toggleDropdown('${data.message_id}')"></i>
+            <div class="dropdown-menu" id="dropdown-${data.message_id}" style="display: none;">
+              ${data.sender === "{{ request.user.username }}" ? `
+                <div class="dropdown-item delete" onclick="deleteMessage('${data.message_id}')">Delete</div>
+              ` : ""}
+              <div class="dropdown-item" onclick="replyToMessage('${data.message_id}')">Reply</div>
+            </div>
+          </div>
+        `;
+        chatbox.appendChild(div);
+        scrollToBottom();
+        updateSidebar(data);
+      } else if (data.type === "update_chat_list") {
+        fetchUpdatedChatList();
+      }
+    };
+
+    function toggleDropdown(messageId) {
+      const dropdown = document.getElementById(`dropdown-${messageId}`);
+      dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
+    }
+
+    document.addEventListener("click", function (e) {
+      if (!e.target.closest(".actions i")) {
+        document.querySelectorAll(".dropdown-menu").forEach(dropdown => {
+          dropdown.style.display = "none";
+        });
+      }
+    });
+
+    function editMessage(messageId) {
+      const messageDiv = document.getElementById(`message-${messageId}`);
+      const currentContent = messageDiv.querySelector("span").textContent;
+      const newContent = prompt("Edit message:", currentContent);
+      if (newContent) {
+        chatSocket.send(JSON.stringify({
+          action: "edit",
+          message_id: messageId,
+          message: newContent
+        }));
+      }
+    }
+
+    function deleteMessage(messageId) {
+      if (confirm("Are you sure you want to delete this message?")) {
+        chatSocket.send(JSON.stringify({
+          action: "delete_confirm",
+          message_id: messageId
+        }));
+      }
+    }
+
+    function replyToMessage(messageId) {
+      const content = prompt("Reply:");
+      if (content) {
+        chatSocket.send(JSON.stringify({
+          action: "reply",
+          reply_to: messageId,
+          message: content
+        }));
+      }
+    }
+
+    function copyMessage(content) {
+      navigator.clipboard.writeText(content).then(() => alert("Copied!"));
+    }
+
+    function updateSidebar(data) {
+      const lastMessage = document.querySelector(".list-group-item.active #last-message");
+      if (lastMessage) {
+        lastMessage.innerHTML = data.sender === "{{ request.user.username }}" ? "You: " + (data.message || data.type) : (data.message || data.type);
+        const timestamp = document.querySelector(".list-group-item.active .timestamp");
+        const date = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+        timestamp.innerHTML = date;
+      }
+    }
+
+    function fetchUpdatedChatList() {
+      fetch(window.location.pathname, {
+        headers: { "X-Requested-With": "XMLHttpRequest" }
+      })
+      .then(response => response.json())
+      .then(data => {
+        const contacts = document.querySelector(".contacts");
+        contacts.innerHTML = data.users.map(user => `
+          <a href="/chat/${user.username}/" class="list-group-item list-group-item-action ${user.username === "{{ username }}" ? "active" : ""}">
+            <div class="d-flex align-items-center">
+              <img src="${user.avatar_url}" class="profile-icon rounded-circle mr-3" style="width: 1.8rem; height: 1.8rem; object-fit: cover" />
+              <div class="w-100">
+                <div class="d-flex justify-content-between">
+                  <strong class="text-truncate">${user.username}</strong>
+                  <small class="text-nowrap timestamp">${user.timestamp}</small>
+                </div>
+                <small class="d-block text-truncate last-msg" style="max-width: 90%" id="last-message">
+                  ${user.is_sender ? "You: " : ""}${user.last_message}
+                </small>
+              </div>
+            </div>
+          </a>
+        `).join("");
+      })
+      .catch(error => console.error("Error fetching chat list:", error));
+    }
+  </script>
+</body>
+
+</html>
+

@@ -1,0 +1,58 @@
+{% extends 'main.html' %}
+{% load static %}
+{% block content %}
+<section class="about-section">
+    <h1>A Hub for IT Enthusiasts, Developers, and Innovators</h1>
+    <p class="sub-heading">Explore best practices, design patterns, and real-world experiences in IT world</p>
+
+    <div class="features">
+        <div class="feature">
+            <img src="{% static 'images/icons/united.png' %}" alt="Collaboration Icon">
+            <h3>Collaboration</h3>
+            <p>We bring together IT professionals, enthusiasts, and learners to share experiences, insights, and best
+                practices.</p>
+        </div>
+        <div class="feature">
+            <img src="{% static 'images/icons/innovation.png' %}" alt="Innovation Icon">
+            <h3>Innovation</h3>
+            <p>Our platform fosters creativity and problem-solving, helping individuals and teams stay ahead in the
+                fast-evolving world of technology.</p>
+        </div>
+        <div class="feature">
+            <img src="{% static 'images/icons/personal-growth.png' %}" alt="Growth Icon">
+            <h3>Growth</h3>
+            <p>We provide a space for continuous learning, mentorship, and the exchange of ideas to help everyone
+                progress in their IT journey.</p>
+        </div>
+    </div> <!-- Fixed missing closing div -->
+
+    <div class="content">
+        <div class="image-container">
+            <img src="{% static 'images/icons/about1.png' %}" alt="ShareWisdom Image" class="gallery-img">
+            <img src="{% static 'images/icons/about2.png' %}" alt="ShareWisdom Image" class="gallery-img">
+            <img src="{% static 'images/icons/about3.png' %}" alt="ShareWisdom Image" class="gallery-img">
+            <img src="{% static 'images/icons/about5.jpg' %}" alt="ShareWisdom Image" class="gallery-img">
+        </div>
+        <div class="description">
+            <p>At Share Wisdom, we believe that knowledge grows when shared.
+                Whether you're an experienced developer, a tech entrepreneur,
+                or just starting in the IT world, this is the place to learn, teach,
+                and connect with like-minded individuals.</p>
+        </div>
+    </div>
+</section>
+
+<script>
+    let images = document.querySelectorAll(".gallery-img");
+    let index = 0;
+
+    function animateImages() {
+        images.forEach(img => img.classList.remove("visible"));
+        images[index].classList.add("visible");
+        index = (index + 1) % images.length;
+    }
+
+    setInterval(animateImages, 4000);
+</script>
+
+{% endblock %}

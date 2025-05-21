@@ -1,0 +1,60 @@
+# Python bytecode fayllari
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual muhit papkasi
+venv/
+env/
+ENV/
+
+# Django maxfiy fayllar va sozlamalar
+*.sqlite3
+db.sqlite3
+
+
+# IDE va muharrirlar uchun fayllar
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-project
+*.sublime-workspace
+
+# Operatsion tizim fayllari
+.DS_Store
+Thumbs.db
+
+# Log fayllar va temp fayllar
+*.log
+*.pot
+*.pyc
+*.pyo
+*.pyd
+*.cover
+*.mo
+*.orig
+*.rej
+*.bak
+
+# Maxfiy fayllar, masalan .env fayli
+.env
+*.env
+
+# Django static va media papkalari (agar serverda o‘zida saqlanadigan bo‘lsa)
+staticfiles/
+media/
+
+# Test natijalari va coverage
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.coveragerc
+
+# Jupyter notebook checkpoint fayllari
+.ipynb_checkpoints
+
+# PyCharm
+*.iml

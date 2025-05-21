@@ -1,0 +1,81 @@
+{% load static %}
+
+{% for notification in notifications %}
+<li>
+    <p>
+        <strong>
+            {% if notification.sender and notification.sender.id %}
+            <a href="{% url 'user-profile' notification.sender.id %}">
+                {{ notification.sender.username }}
+            </a>
+            {% else %}
+            <span>Unknown User</span>
+            {% endif %}
+        </strong>
+
+        {% if notification.notification_type == "like" %}
+        liked your post.
+
+        {% elif notification.notification_type == "comment" %}
+        commented on your post: "{{ notification.comment_text }}".
+
+        {% elif notification.notification_type == "follow_request" %}
+        sent you a follow request.
+        <a href="{% url 'accept-follow' notification.id %}" class="btn btn-danger btn-sm">Accept</a>
+        <a href="{% url 'reject-follow' notification.id %}" class="btn btn-danger btn-sm">Decline</a>
+
+        {% elif notification.notification_type == "follow_accepted" %}
+        's follow request was accepted.
+
+        {% elif notification.notification_type == "follow_declined" %}
+        's follow request was declined.
+
+        {% elif notification.notification_type == "new_follower" %}
+        started following you.
+
+        {% endif %}
+        <small>{{ notification.created_at|date:"F d, Y H:i" }}</small>
+    </p>
+
+    {% if notification.post %}
+    {% if notification.post.media %}
+    {% if notification.post.doc_type == "I" %} {# Image #}
+    <a href="{% url 'room' notification.post.id %}">
+        <img src="{{ notification.post.media.url }}" alt="Room Image" width="50"></a>
+    {% elif notification.post.doc_type == "V" %} {# Video #}
+    <a href="{% url 'room' notification.post.id %}">
+        <img src="{% static 'images/icons/video_icon.png' %}" alt="Video" width="50"></a>
+    {% elif notification.post.doc_type == "P" %} {# PDF #}
+    <a href="{% url 'room' notification.post.id %}">
+        <img src="{% static 'images/icons/book_icon.png' %}" alt="PDF" width="50"></a>
+    {% else %}
+    <a href="{% url 'room' notification.post.id %}">
+        <button class="btn btn-primary">View Post</button></a>
+    {% endif %}
+    {% endif %}
+    {% endif %}
+
+</li>
+{% endfor %}
+
+
+<button id="mark-all-read">Mark All as Read</button>
+
+<script>
+document.getElementById('mark-all-read').addEventListener('click', function() {
+    fetch('{% url "notifications" %}', {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': '{{ csrf_token }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update the UI (e.g., hide the unread count badge)
+            document.querySelectorAll('.notification').forEach(el => el.classList.add('read'));
+        }
+    });
+});
+</script>

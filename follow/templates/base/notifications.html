@@ -1,0 +1,297 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notifications{% if unread_count > 0 %}^{{ unread_count }}{% endif %}</title>
+    <!-- Include Bootstrap for styling -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="container mt-4">
+        <h1>Notifications{% if unread_count > 0 %}<sup>{{ unread_count }}</sup>{% endif %}</h1>
+
+        <!-- Mark All as Read Button -->
+        {% if unread_count > 0 %}
+        <button id="mark-all-read" class="btn btn-primary mb-3">Mark All as Read</button>
+        {% endif %}
+
+        <!-- Notifications List -->
+        <ul class="list-unstyled">
+            {% for notification in notifications %}
+            <!-- Track seen follow requests and new followers to avoid duplicates -->
+            {% if notification.notification_type == "follow_request" %}
+                {% if not notification.follow_request.id in seen_follow_request_ids %}
+                    {% with seen_follow_request_ids|add:notification.follow_request.id as seen_follow_request_ids %}
+                    <li class="notification {% if notification.is_read %}read{% else %}unread{% endif %} mb-2 p-2 border rounded" data-follow-request-id="{{ notification.follow_request.id }}">
+                        <p>
+                            <strong>
+                                {% if notification.sender and notification.sender.id %}
+                                <a href="{% url 'user-profile' notification.sender.id %}">
+                                    {{ notification.sender.username }}
+                                </a>
+                                {% else %}
+                                <span>Unknown User</span>
+                                {% endif %}
+                            </strong>
+                            sent you a follow request.
+                            <div id="follow-request-{{ notification.follow_request.id }}">
+                                {% if notification.follow_request and not notification.follow_request.status == 'accepted' %}
+                                <a href="{% url 'accept-follow' notification.id %}" class="btn btn-danger btn-sm accept-follow"
+                                    data-notification-id="{{ notification.id }}"
+                                    data-follow-request-id="{{ notification.follow_request.id }}"
+                                    data-url="{% url 'accept-follow' notification.id %}">Accept</a>
+                                <a href="{% url 'reject-follow' notification.id %}" class="btn btn-danger btn-sm reject-follow"
+                                    data-notification-id="{{ notification.id }}"
+                                    data-follow-request-id="{{ notification.follow_request.id }}"
+                                    data-url="{% url 'reject-follow' notification.id %}">Decline</a>
+                                {% elif notification.follow_request and notification.follow_request.status == 'accepted' %}
+                                <span class="btn btn-success btn-sm disabled">Accepted</span>
+                                {% else %}
+                                <span class="btn btn-secondary btn-sm disabled">Declined</span>
+                                {% endif %}
+                            </div>
+                            <small class="text-muted d-block">{{ notification.created_at|date:"F d, Y H:i" }}</small>
+                        </p>
+                    </li>
+                    {% endwith %}
+                {% endif %}
+            {% elif notification.notification_type == "new_follower" %}
+                {% if not notification.sender.id in seen_new_follower_ids %}
+                    {% with seen_new_follower_ids|add:notification.sender.id as seen_new_follower_ids %}
+                    <li class="notification {% if notification.is_read %}read{% else %}unread{% endif %} mb-2 p-2 border rounded" data-sender-id="{{ notification.sender.id }}">
+                        <p>
+                            <strong>
+                                {% if notification.sender and notification.sender.id %}
+                                <a href="{% url 'user-profile' notification.sender.id %}">
+                                    {{ notification.sender.username }}
+                                </a>
+                                {% else %}
+                                <span>Unknown User</span>
+                                {% endif %}
+                            </strong>
+                            started following you.
+                            <small class="text-muted d-block">{{ notification.created_at|date:"F d, Y H:i" }}</small>
+                        </p>
+                    </li>
+                    {% endwith %}
+                {% endif %}
+            {% else %}
+            <li class="notification {% if notification.is_read %}read{% else %}unread{% endif %} mb-2 p-2 border rounded" data-notification-id="{{ notification.id }}">
+                <p>
+                    <strong>
+                        {% if notification.sender and notification.sender.id %}
+                        <a href="{% url 'user-profile' notification.sender.id %}">
+                            {{ notification.sender.username }}
+                        </a>
+                        {% else %}
+                        <span>Unknown User</span>
+                        {% endif %}
+                    </strong>
+
+                    {% if notification.notification_type == "like" %}
+                    liked your post.
+
+                    {% elif notification.notification_type == "comment" %}
+                    commented on your post: "{{ notification.comment_text }}".
+
+                    {% elif notification.notification_type == "follow_accepted" %}
+                    accepted your follow request.
+
+                    {% elif notification.notification_type == "follow_declined" %}
+                    declined your follow request.
+
+                    {% endif %}
+
+                    <small class="text-muted d-block">{{ notification.created_at|date:"F d, Y H:i" }}</small>
+                </p>
+
+                {% if notification.notification_type == "like" or notification.notification_type == "comment" %}
+                    {% if notification.post %}
+                        {% if notification.post.media %}
+                            {% if notification.post.doc_type == "I" %}
+                            <a href="{% url 'room' notification.post.id %}">
+                                <img src="{{ notification.post.media.url }}" alt="Room Image" width="50">
+                            </a>
+                            {% elif notification.post.doc_type == "V" %}
+                            <a href="{% url 'room' notification.post.id %}">
+                                <img src="{% static 'images/icons/video_icon.png' %}" alt="Video" width="50">
+                            </a>
+                            {% elif notification.post.doc_type == "P" %}
+                            <a href="{% url 'room' notification.post.id %}">
+                                <img src="{% static 'images/icons/book_icon.png' %}" alt="PDF" width="50">
+                            </a>
+                            {% else %}
+                            <a href="{% url 'room' notification.post.id %}">
+                                <button class="btn btn-primary btn-sm">View Post</button>
+                            </a>
+                            {% endif %}
+                        {% else %}
+                        <p>No media available for this post.</p>
+                        {% endif %}
+                    {% else %}
+                    <p>No post associated with this notification.</p>
+                    {% endif %}
+                {% endif %}
+            </li>
+            {% endif %}
+            {% empty %}
+            <li>No notifications available.</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <!-- JavaScript for Dynamic Updates -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Function to update the notification count in the UI
+            function updateNotificationCount() {
+                fetch('{% url "notifications-count" %}', {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        const count = data.count;
+                        const title = document.querySelector('h1');
+                        const markAllButton = document.getElementById('mark-all-read');
+                        if (count > 0) {
+                            title.innerHTML = `Notifications<sup>${count}</sup>`;
+                            markAllButton.style.display = 'block';
+                        } else {
+                            title.innerHTML = 'Notifications';
+                            markAllButton.style.display = 'none';
+                        }
+
+                        const navbarCountElement = document.getElementById('navbar-notification-count');
+                        if (navbarCountElement) {
+                            if (count > 0) {
+                                navbarCountElement.textContent = count;
+                            } else {
+                                navbarCountElement.textContent = '';
+                            }
+                        }
+
+                        const profileCountElement = document.getElementById('profile-notification-count');
+                        if (profileCountElement) {
+                            if (count > 0) {
+                                profileCountElement.textContent = ` (${count})`;
+                            } else {
+                                profileCountElement.textContent = '';
+                            }
+                        }
+                    })
+                    .catch(error => console.error('Error fetching notification count:', error));
+            }
+
+            // Handle "Mark All as Read" button click
+            document.getElementById('mark-all-read').addEventListener('click', function () {
+                fetch('{% url "notifications" %}', {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    }
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            document.querySelectorAll('.notification').forEach(el => {
+                                el.classList.remove('unread');
+                                el.classList.add('read');
+                            });
+                            updateNotificationCount();
+                        }
+                    })
+                    .catch(error => console.error('Error marking notifications as read:', error));
+            });
+
+            // Handle "Accept" button clicks for follow requests
+            document.querySelectorAll('.accept-follow').forEach(button => {
+                button.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    const notificationId = this.getAttribute('data-notification-id');
+                    const followRequestId = this.getAttribute('data-follow-request-id');
+                    const url = this.getAttribute('data-url');
+                    fetch(url, {
+                        method: 'GET',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                        .then(response => {
+                            if (!response.ok) throw new Error('Network response was not ok');
+                            return response.json();
+                        })
+                        .then(data => {
+                            if (data.status === 'accepted') {
+                                document.querySelectorAll(`.notification[data-follow-request-id="${followRequestId}"]`).forEach(notification => {
+                                    const container = notification.querySelector(`#follow-request-${followRequestId}`);
+                                    if (container) {
+                                        container.innerHTML = '<span class="btn btn-success btn-sm disabled">Accepted</span>';
+                                    }
+                                });
+                                updateNotificationCount();
+                            }
+                        })
+                        .catch(error => console.error('Error accepting follow request:', error));
+                });
+            });
+
+            // Handle "Decline" button clicks for follow requests
+            document.querySelectorAll('.reject-follow').forEach(button => {
+                button.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    const notificationId = this.getAttribute('data-notification-id');
+                    const followRequestId = this.getAttribute('data-follow-request-id');
+                    const url = this.getAttribute('data-url');
+                    fetch(url, {
+                        method: 'GET',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                        .then(response => {
+                            if (!response.ok) throw new Error('Network response was not ok');
+                            return response.json();
+                        })
+                        .then(data => {
+                            if (data.status === 'declined') {
+                                document.querySelectorAll(`.notification[data-follow-request-id="${followRequestId}"]`).forEach(notification => {
+                                    const container = notification.querySelector(`#follow-request-${followRequestId}`);
+                                    if (container) {
+                                        container.innerHTML = '<span class="btn btn-secondary btn-sm disabled">Declined</span>';
+                                    }
+                                });
+                                updateNotificationCount();
+                            }
+                        })
+                        .catch(error => console.error('Error declining follow request:', error));
+                });
+            });
+
+            // Initial update of notification count
+            updateNotificationCount();
+        });
+    </script>
+
+    <!-- Basic CSS for styling -->
+    <style>
+        .notification.unread {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+
+        .notification.read {
+            background-color: #ffffff;
+        }
+    </style>
+</body>
+
+</html>
