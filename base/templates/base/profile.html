@@ -118,7 +118,7 @@
           {% if request.user == user %}
           <a href="{% url 'update-user' %}" class="btn btn--main btn--pill">{% trans 'Edit Profile' %}</a>
           {% else %}  
-          <a href="{% url 'chat_ex' username=user.username %}" class="btn btn--main btn--pill">{% trans 'Send Message' %}</a>
+          <a href="{% url 'chat' username=user.username %}" class="btn btn--main btn--pill">{% trans 'Send Message' %}</a>
           {% endif %}
 
           <div>
